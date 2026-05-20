@@ -48,33 +48,43 @@ middlewares:
     types: ["text/html", "application/json"]
 
 routing:
-  # Host-based routing for API subdomain
   - host: api.example.com
     path: /
     strategy: round-robin
+    priority: 100
     targets:
       - url: "http://127.0.0.1:3000"
+        weight: 3
       - url: "http://127.0.0.1:3001"
+        weight: 1
 
-  # Path-based routing for the main domain
   - host: example.com
     path: /auth
     strategy: ip-hash
+    priority: 90
+    tls:
+      cert_file: "/etc/ssl/certs/auth.crt"
+      key_file: "/etc/ssl/certs/auth.key"
     targets:
       - url: "http://10.0.0.5:8080"
 
-  # Catch-all for the main application
   - host: example.com
     path: /
     strategy: single
+    priority: 10
     targets:
       - url: "http://127.0.0.1:5173"
 
-  # Wildcard SaaS routing
   - host: "*.saas-app.com"
     strategy: dynamic-lookup
+    priority: 50
     resolver: "redis://localhost:6379"
 
+  - path: /
+    strategy: single
+    priority: 5
+    targets:
+      - url: "http://127.0.0.1:3000"
 ```
 
 ## Architecture & Data Flow
