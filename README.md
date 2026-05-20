@@ -1,7 +1,6 @@
 # Apex Proxy
 
 ![status](https://img.shields.io/badge/status-WIP-yellow)
-[![CI](https://github.com/niix-dan/apex/actions/workflows/ci.yml/badge.svg)](https://github.com/niix-dan/apex/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/niix-dan/apex)](https://goreportcard.com/report/github.com/niix-dan/apex)
 [![Go Reference](https://pkg.go.dev/badge/github.com/niix-dan/apex.svg)](https://pkg.go.dev/github.com/niix-dan/apex)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
