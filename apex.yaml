@@ -1,0 +1,57 @@
+# apex.yaml
+
+server:
+  http_port: 80
+  https_port: 443
+  auto_tls: false # true = automatically obtain TLS certs via Let's Encrypt, false = use provided certs
+  tls:
+    cert_file: "/etc/ssl/certs/server.crt"
+    key_file: "/etc/ssl/certs/server.key"
+
+middlewares:
+  rate_limit:
+    enabled: true
+    requests_per_minute: 1000
+  compression:
+    enabled: true
+    types: ["text/html", "application/json"]
+
+routing:
+  - host: api.example.com
+    path: /
+    strategy: round-robin
+    priority: 100
+    targets:
+      - url: "http://127.0.0.1:3000"
+        weight: 3
+      - url: "http://127.0.0.1:3001"
+        weight: 1
+
+  - host: example.com
+    path: /auth
+    strategy: ip-hash
+    priority: 90
+    tls:
+      cert_file: "/etc/ssl/certs/auth.crt"
+      key_file: "/etc/ssl/certs/auth.key"
+    targets:
+      - url: "http://10.0.0.5:8080"
+
+  - host: example.com
+    path: /
+    strategy: single
+    priority: 10
+    targets:
+      - url: "http://127.0.0.1:5173"
+
+  - host: "*.saas-app.com"
+    strategy: dynamic-lookup
+    priority: 50
+    resolver: "redis://localhost:6379"
+
+  # Default catch-all route if no other routes match (optional)
+  - path: /
+    strategy: single
+    priority: 1
+    targets:
+      - url: "http://127.0.0.1:3000"

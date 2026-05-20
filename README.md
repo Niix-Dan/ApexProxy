@@ -1,16 +1,23 @@
 # Apex Proxy
 
-A high-performance, CLI-first reverse proxy and load balancer written in Go. Built to replace legacy web servers with a developer-first experience, native hot-reloading, real-time metrics, and dynamic routing for modern microservices and SaaS architectures.
+![status](https://img.shields.io/badge/status-WIP-yellow)
+[![CI](https://github.com/niix-dan/apex/actions/workflows/ci.yml/badge.svg)](https://github.com/niix-dan/apex/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/niix-dan/apex)](https://goreportcard.com/report/github.com/niix-dan/apex)
+[![Go Reference](https://pkg.go.dev/badge/github.com/niix-dan/apex.svg)](https://pkg.go.dev/github.com/niix-dan/apex)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-## Core Features
+A high-performance reverse proxy and load balancer written in Go.
 
-*   **Single Binary:** No complex dependencies or background daemons. Download and run.
-*   **Declarative Configuration:** Human-readable YAML mapping for hosts, paths, and middlewares.
-*   **Hot Reloading:** Watch mode applies configuration changes instantly without dropping active TCP connections.
-*   **Dynamic Subdomain Routing:** Built-in support for host-based routing, including wildcard domains.
-*   **Load Balancing:** Native strategies including Round-Robin, IP-Hash, and Least-Connections.
-*   **TUI Dashboard:** Real-time terminal user interface for monitoring traffic, latencies, and node health.
-*   **Edge Middlewares:** Rate limiting, IP blacklisting, and payload compression out of the box.
+> Work in progress. Core proxy engine and TUI dashboard are functional.
+
+## Features
+
+- Declarative YAML configuration
+- Host and path-based routing with priority ordering
+- Wildcard subdomain matching (`*.domain.com`)
+- Load balancing: round-robin (weighted), ip-hash, single
+- Real-time TUI dashboard (`apex status`)
+- Internal metrics endpoint on `:9090` (localhost-only, HMAC-signed)
 
 ## Installation
 
@@ -18,26 +25,23 @@ A high-performance, CLI-first reverse proxy and load balancer written in Go. Bui
 go install github.com/niix-dan/apex@latest
 ```
 
-## CLI Reference
+## Usage
 
-The CLI is the primary interface for managing the proxy.
+```bash
+apex start --config ./apex.yaml
+apex status
+```
 
-* `apex init` - Generates a boilerplate `apex.yaml` configuration file in the current directory.
-* `apex start --config ./apex.yaml` - Starts the proxy server based on the provided configuration.
-* `apex watch --config ./apex.yaml` - Starts the server and listens for filesystem changes on the config file, reloading the routing table seamlessly.
-* `apex status` - Launches the interactive TUI (Terminal User Interface) to display real-time metrics.
-
-## Configuration Specification
-
-Apex uses a straightforward YAML configuration. It matches incoming requests by `host` and `path`, processes them through `middlewares`, and forwards them to `targets` using a defined `strategy`.
+## Configuration
 
 ```yaml
-# apex.yaml
-
 server:
   http_port: 80
   https_port: 443
-  auto_tls: true
+  auto_tls: false
+  tls:
+    cert_file: "/etc/ssl/certs/server.crt"
+    key_file: "/etc/ssl/certs/server.key"
 
 middlewares:
   rate_limit:
@@ -62,18 +66,8 @@ routing:
     path: /auth
     strategy: ip-hash
     priority: 90
-    tls:
-      cert_file: "/etc/ssl/certs/auth.crt"
-      key_file: "/etc/ssl/certs/auth.key"
     targets:
       - url: "http://10.0.0.5:8080"
-
-  - host: example.com
-    path: /
-    strategy: single
-    priority: 10
-    targets:
-      - url: "http://127.0.0.1:5173"
 
   - host: "*.saas-app.com"
     strategy: dynamic-lookup
@@ -82,50 +76,27 @@ routing:
 
   - path: /
     strategy: single
-    priority: 5
+    priority: 1
     targets:
       - url: "http://127.0.0.1:3000"
 ```
 
-## Architecture & Data Flow
+## Roadmap
 
-When developing or contributing to Apex, keep the following request lifecycle in mind:
-
-1. **Listener Layer:** Go `net/http` server accepts incoming connections.
-2. **Middleware Chain:** Request passes through global and route-specific interceptors (Rate Limit, Auth, Logging).
-3. **Routing Engine:** The system extracts the `Host` header and URL `Path` to find a matching rule in the routing table (stored in memory).
-4. **Load Balancer:** If multiple targets exist, the selected strategy algorithm determines the backend node.
-5. **Reverse Proxy Transport:** `httputil.ReverseProxy` (or custom transport) pipes the request to the target and streams the response back to the client.
-
-## Development Roadmap
-
-This section serves as the internal checklist for building the core engine in Go.
-
-### Phase 1: Core Proxy Engine
-
-* [ ] Setup Go project and CLI framework (using `spf13/cobra`).
-* [ ] Implement YAML parser to load structures into memory.
-* [ ] Create the basic Reverse Proxy using Go's `httputil.ReverseProxy`.
-* [ ] Implement host and path matching logic.
-
-### Phase 2: Load Balancing & State
-
-* [ ] Implement `round-robin` load balancing algorithm.
-* [ ] Implement `ip-hash` load balancing algorithm.
-* [ ] Add basic health-checking for target nodes (remove dead nodes from rotation).
-
-### Phase 3: Developer Experience
-
-* [ ] Implement `fsnotify` to watch the YAML file for changes.
-* [ ] Build the graceful reload mechanism (swapping the routing table pointer using atomic operations or mutexes without dropping connections).
-* [ ] Build the terminal dashboard using a library like `charmbracelet/bubbletea` or `gizak/termui`.
-
-### Phase 4: Middlewares & Production Readiness
-
-* [ ] Implement Rate Limiting using Token Bucket algorithm.
-* [ ] Integrate automatic TLS via Let's Encrypt (using `golang.org/x/crypto/acme/autocert`).
-* [ ] Write unit tests for the routing and load balancing algorithms.
+- [x] YAML config parser
+- [x] Reverse proxy via `httputil.ReverseProxy`
+- [x] Host, path, and wildcard routing
+- [x] Round-robin (weighted) and ip-hash load balancing
+- [x] Metrics collection (latency, bandwidth, status codes, per-route stats)
+- [x] TUI dashboard
+- [ ] Hot-reload via `fsnotify` (no dropped connections)
+- [ ] Rate limiting (token bucket)
+- [ ] Response compression
+- [ ] Automatic TLS via Let's Encrypt
+- [ ] `dynamic-lookup` strategy (Redis)
+- [ ] `apex init` command
+- [ ] Unit tests
 
 ## License
 
-MIT License.
+MIT
