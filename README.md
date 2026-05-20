@@ -21,7 +21,7 @@ A lightweight, high-performance reverse proxy and load balancer written in Go, f
 ## Installation
 
 ```bash
-go install github.com/niix-dan/apex@latest
+go install github.com/niix-dan/apexproxy@latest
 ```
 
 ## Usage
