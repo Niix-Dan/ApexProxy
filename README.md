@@ -5,7 +5,7 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/niix-dan/apex.svg)](https://pkg.go.dev/github.com/niix-dan/apex)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-A high-performance reverse proxy and load balancer written in Go.
+A lightweight, high-performance reverse proxy and load balancer written in Go, featuring an instant, zero-dependency TUI dashboard for real-time traffic monitoring.
 
 > Work in progress. Core proxy engine and TUI dashboard are functional.
 
