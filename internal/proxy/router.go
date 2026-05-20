@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -40,6 +41,21 @@ func NewRouter(cfg *config.Config) *Router {
 				URL:   t.URL,
 				Proxy: httputil.NewSingleHostReverseProxy(u),
 			}
+
+			rt.Proxy.ModifyResponse = func(resp *http.Response) error {
+				resp.Header.Del("Server")
+				resp.Header.Del("X-Powered-By")
+				resp.Header.Del("X-AspNet-Version")
+				resp.Header.Del("X-AspNetMvc-Version")
+
+				resp.Header.Set("X-Content-Type-Options", "nosniff")
+				resp.Header.Set("X-Frame-Options", "SAMEORIGIN")
+				resp.Header.Set("Referrer-Policy", "strict-origin-when-cross-origin")
+				resp.Header.Set("Strict-Transport-Security", "max-age=63072000; includeSubDomains")
+
+				return nil
+			}
+
 			rTargets = append(rTargets, rt)
 
 			weight := t.Weight
@@ -92,6 +108,14 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		r.recordMetrics(interceptor, req, reqBodyCounter, startTime, "none", matched.Config.Strategy)
 		return
 	}
+
+	ip, _, err := net.SplitHostPort(req.RemoteAddr)
+	if err != nil {
+		ip = req.RemoteAddr
+	}
+
+	req.Header.Set("X-Real-IP", ip)
+	req.Header.Set("X-Forwarded-Host", req.Host)
 
 	if req.TLS != nil {
 		req.Header.Set("X-Forwarded-Proto", "https")
