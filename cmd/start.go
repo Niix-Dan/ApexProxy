@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
@@ -24,19 +23,23 @@ var startCmd = &cobra.Command{
 		}
 
 		go func() {
-			http.HandleFunc("/metrics", metrics.HTTPHandler)
-			http.HandleFunc("/reset", func(w http.ResponseWriter, r *http.Request) {
-				metrics.Instance.Reset()
-				w.WriteHeader(http.StatusOK)
-			})
-			_ = http.ListenAndServe("127.0.0.1:9090", nil)
+			mux := http.NewServeMux()
+			mux.HandleFunc("/metrics", metrics.HTTPHandler)
+			mux.HandleFunc("/reset", metrics.ResetHandler)
+			if err := http.ListenAndServe("127.0.0.1:9090", mux); err != nil {
+				log.Printf("Metrics server error: %v", err)
+			}
 		}()
 
-		router := proxy.NewRouter(cfg)
-		addr := fmt.Sprintf(":%d", cfg.Server.HTTPPort)
+		server, err := proxy.NewServer(cfg)
+		if err != nil {
+			log.Fatalf("Failed to create server: %v", err)
+		}
 
-		log.Printf("Starting Apex Proxy on port %d...", cfg.Server.HTTPPort)
-		if err := http.ListenAndServe(addr, router); err != nil {
+		log.Printf("Starting Apex Proxy (HTTP:%d, HTTPS:%d, AutoTLS:%v)...",
+			cfg.Server.HTTPPort, cfg.Server.HTTPSPort, cfg.Server.AutoTLS)
+
+		if err := server.Start(); err != nil {
 			log.Fatalf("Server failed: %v", err)
 		}
 	},

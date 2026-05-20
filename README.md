@@ -91,7 +91,7 @@ routing:
 - [ ] Hot-reload via `fsnotify` (no dropped connections)
 - [ ] Rate limiting (token bucket)
 - [ ] Response compression
-- [ ] Automatic TLS via Let's Encrypt
+- [x] Automatic TLS via Let's Encrypt
 - [ ] `dynamic-lookup` strategy (Redis)
 - [ ] `apex init` command
 - [ ] Unit tests
