@@ -1,8 +1,8 @@
 # Apex Proxy
 
 ![status](https://img.shields.io/badge/status-WIP-yellow)
-[![Go Report Card](https://goreportcard.com/badge/github.com/niix-dan/apex)](https://goreportcard.com/report/github.com/niix-dan/apex)
-[![Go Reference](https://pkg.go.dev/badge/github.com/niix-dan/apex.svg)](https://pkg.go.dev/github.com/niix-dan/apex)
+[![Go Report Card](https://goreportcard.com/badge/github.com/niix-dan/apexproxy)](https://goreportcard.com/report/github.com/niix-dan/apexproxy)
+[![Go Reference](https://pkg.go.dev/badge/github.com/niix-dan/apexproxy.svg)](https://pkg.go.dev/github.com/niix-dan/apexproxy)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 A lightweight, high-performance reverse proxy and load balancer written in Go, featuring an instant, zero-dependency TUI dashboard for real-time traffic monitoring.

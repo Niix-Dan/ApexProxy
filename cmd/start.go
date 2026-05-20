@@ -5,9 +5,9 @@ import (
 	"log"
 	"net/http"
 
-	"apexproxy/internal/config"
-	"apexproxy/internal/metrics"
-	"apexproxy/internal/proxy"
+	"github.com/niix-dan/apexproxy/internal/config"
+	"github.com/niix-dan/apexproxy/internal/metrics"
+	"github.com/niix-dan/apexproxy/internal/proxy"
 
 	"github.com/spf13/cobra"
 )

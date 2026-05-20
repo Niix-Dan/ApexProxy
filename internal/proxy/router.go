@@ -12,8 +12,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"apexproxy/internal/config"
-	"apexproxy/internal/metrics"
+	"github.com/niix-dan/apexproxy/internal/config"
+	"github.com/niix-dan/apexproxy/internal/metrics"
 )
 
 type bodyReadCounter struct {

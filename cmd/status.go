@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"apexproxy/internal/metrics"
+	"github.com/niix-dan/apexproxy/internal/metrics"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"

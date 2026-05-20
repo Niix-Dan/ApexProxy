@@ -3,8 +3,10 @@ package metrics
 import (
 	"crypto/hmac"
 	"crypto/sha256"
+
 	"encoding/hex"
 	"encoding/json"
+
 	"fmt"
 	"net/http"
 	"runtime"

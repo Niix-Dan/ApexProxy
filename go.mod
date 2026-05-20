@@ -1,4 +1,4 @@
-module apexproxy
+module github.com/niix-dan/apexproxy
 
 go 1.26.3
 
