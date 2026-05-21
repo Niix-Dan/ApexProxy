@@ -3,6 +3,7 @@ package metrics
 import (
 	"crypto/hmac"
 	"crypto/sha256"
+	"sort"
 
 	"encoding/hex"
 	"encoding/json"
@@ -159,8 +160,8 @@ func (r *Registry) RecordRequest(
 	}
 
 	found := false
-	for i, route := range r.routes {
-		if route.Path == path && route.Target == target {
+	for i := range r.routes {
+		if r.routes[i].Path == path && r.routes[i].Target == target {
 			r.routes[i].Reqs++
 			r.routes[i].Health = health
 			if status >= 500 {
@@ -170,11 +171,40 @@ func (r *Registry) RecordRequest(
 			break
 		}
 	}
+
 	if !found {
 		errs := 0
 		if status >= 500 {
 			errs = 1
 		}
+
+		if len(r.routes) < 50 {
+			r.routes = append(r.routes, RouteStat{
+				Path:     path,
+				Strategy: strategy,
+				Target:   target,
+				Health:   health,
+				Reqs:     1,
+				Errors:   errs,
+			})
+		} else {
+			overflowFound := false
+			for i := range r.routes {
+				if r.routes[i].Path == "*" && r.routes[i].Target == "[ * ]" {
+					r.routes[i].Reqs++
+					if status >= 500 {
+						r.routes[i].Errors++
+					}
+					overflowFound = true
+					break
+				}
+			}
+
+			if !overflowFound {
+				r.routes = append(r.routes, RouteStat{Path: "*", Strategy: "catch-all", Target: "[ * ]", Health: "UP", Reqs: 1, Errors: errs})
+			}
+		}
+
 		r.routes = append(r.routes, RouteStat{
 			Path:     path,
 			Strategy: strategy,
@@ -245,8 +275,16 @@ func (r *Registry) snapshot() ProxyStats {
 	copy(logs, r.recentLogs)
 	r.mu.RUnlock()
 
-	if len(logs) > 3 {
-		logs = logs[:3]
+	sort.Slice(routes, func(i, j int) bool {
+		return routes[i].Reqs > routes[j].Reqs
+	})
+
+	if len(routes) > 10 {
+		routes = routes[:10]
+	}
+
+	if len(logs) > 5 {
+		logs = logs[:5]
 	}
 
 	return ProxyStats{

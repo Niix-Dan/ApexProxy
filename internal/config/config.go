@@ -7,9 +7,17 @@ import (
 )
 
 type Config struct {
-	Server  ServerConfig `yaml:"server"`
-	Proxy   Middlewares  `yaml:"middlewares"`
-	Routing []Route      `yaml:"routing"`
+	Server        ServerConfig  `yaml:"server"`
+	Proxy         Middlewares   `yaml:"middlewares"`
+	Routing       []Route       `yaml:"routing"`
+	Logging       LoggingConfig `yaml:"logging"`
+	MetricsSecret string        `yaml:"MetricsSecret"`
+}
+
+type LoggingConfig struct {
+	CSVEnabled    bool     `yaml:"csv_enabled"`
+	CSVPath       string   `yaml:"csv_path"`
+	RedactHeaders []string `yaml:"redact_headers"`
 }
 
 type ServerConfig struct {
