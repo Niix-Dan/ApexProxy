@@ -204,15 +204,6 @@ func (r *Registry) RecordRequest(
 				r.routes = append(r.routes, RouteStat{Path: "*", Strategy: "catch-all", Target: "[ * ]", Health: "UP", Reqs: 1, Errors: errs})
 			}
 		}
-
-		r.routes = append(r.routes, RouteStat{
-			Path:     path,
-			Strategy: strategy,
-			Target:   target,
-			Health:   health,
-			Reqs:     1,
-			Errors:   errs,
-		})
 	}
 }
 
