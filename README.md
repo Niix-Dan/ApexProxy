@@ -5,9 +5,9 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/niix-dan/apexproxy.svg)](https://pkg.go.dev/github.com/niix-dan/apexproxy)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-A lightweight, high-performance reverse proxy and load balancer written in Go, featuring an instant, zero-dependency TUI dashboard for real-time traffic monitoring.
+A lightweight, high-performance reverse proxy and load balancer written in Go, featuring a zero-dependency TUI dashboard for real-time traffic monitoring.
 
-> Work in progress. Core proxy engine and TUI dashboard are functional.
+> **Note:** Work in progress. The core proxy engine and TUI dashboard are functional.
 
 ## Features
 
@@ -18,29 +18,51 @@ A lightweight, high-performance reverse proxy and load balancer written in Go, f
 - Real-time TUI dashboard (`apex status`)
 - Internal metrics endpoint on `:9090` (localhost-only, HMAC-signed)
 
-## Installation
+## Quick Start
 
+### Installation
+
+
+### Installation
 ```bash
 go install github.com/niix-dan/apexproxy@latest
 ```
 
-## Usage
+### Initialization (Linux / systemd)
+
+Run the init command as root to install the binary to `/usr/local/bin`, generate the default configuration in `/etc/apex/apex.yaml`, and start the systemd background service:
 
 ```bash
-apex start --config ./apex.yaml
+sudo $(which apexproxy) init
+```
+
+### CLI Usage
+
+```bash
+# Start the proxy server in foreground (uses apex.yaml by default)
+apex start --config /etc/apex/apex.yaml
+
+# Open the real-time TUI metrics dashboard
 apex status
 ```
 
-## Configuration
+## Configuration Example
+
+The configuration is managed via `/etc/apex/apex.yaml`:
 
 ```yaml
 server:
   http_port: 80
   https_port: 443
-  auto_tls: false
+  auto_tls: true
   tls:
     cert_file: "/etc/ssl/certs/server.crt"
     key_file: "/etc/ssl/certs/server.key"
+
+logging:
+    csv_enabled: true
+    csv_path: "/var/log/apex.csv"
+    redact_headers: ["Authorization", "Cookie"]
 
 middlewares:
   rate_limit:
@@ -88,12 +110,12 @@ routing:
 - [x] Round-robin (weighted) and ip-hash load balancing
 - [x] Metrics collection (latency, bandwidth, status codes, per-route stats)
 - [x] TUI dashboard
+- [x] `apex init` command
+- [x] Automatic TLS via Let's Encrypt
 - [ ] Hot-reload via `fsnotify` (no dropped connections)
 - [ ] Rate limiting (token bucket)
-- [ ] Response compression
-- [x] Automatic TLS via Let's Encrypt
+- [ ] Response compression middleware
 - [ ] `dynamic-lookup` strategy (Redis)
-- [ ] `apex init` command
 - [ ] Unit tests
 
 ## License

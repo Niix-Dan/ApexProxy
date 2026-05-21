@@ -1,10 +1,12 @@
-# apex.yaml
+# Apex Proxy Configuration
+# High-performance reverse proxy configuration file
 
 server:
   http_port: 80
   https_port: 443
   auto_tls: true
-  logging:
+
+logging:
     csv_enabled: true
     csv_path: "/var/log/apex.csv"
     redact_headers: ["Authorization", "Cookie"]
@@ -29,27 +31,8 @@ routing:
         weight: 1
 
   - host: example.com
-    path: /auth
-    strategy: ip-hash
-    priority: 90
-    targets:
-      - url: "http://10.0.0.5:8080"
-
-  - host: example.com
     path: /
     strategy: single
     priority: 10
     targets:
       - url: "http://127.0.0.1:5173"
-
-  - host: "*.saas-app.com"
-    strategy: dynamic-lookup
-    priority: 50
-    resolver: "redis://localhost:6379"
-
-  # Default catch-all route if no other routes match (optional)
-  - path: /
-    strategy: single
-    priority: 1
-    targets:
-      - url: "http://127.0.0.1:3000"
