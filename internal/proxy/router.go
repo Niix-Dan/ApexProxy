@@ -145,6 +145,8 @@ func (r *Router) matchRoute(req *http.Request) *RuntimeRoute {
 }
 
 func (r *Router) recordMetrics(w *responseWriterInterceptor, req *http.Request, body *bodyReadCounter, start time.Time, target, strategy string) {
+	metrics.CSVLog.LogRequest(req, w.statusCode)
+
 	metrics.Instance.RecordRequest(
 		w.statusCode, req.Method, req.URL.Path, time.Since(start),
 		req.RemoteAddr, target, strategy, body.bytesRead, w.bytesWritten,

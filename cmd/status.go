@@ -79,6 +79,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+func safeTruncate(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+	if maxLen > 3 {
+		return s[:maxLen-3] + "..."
+	}
+	return s[:maxLen]
+}
+
 func (m model) View() string {
 	var sb strings.Builder
 
@@ -127,20 +137,39 @@ func (m model) View() string {
 	sb.WriteString(fmt.Sprintf("   4xx: [%-30s] %3d%%  (%d req)\n", bar(p4), p4, m.stats.Codes4xx))
 	sb.WriteString(fmt.Sprintf("   5xx: [%-30s] %3d%%  (%d req)\n\n", bar(p5), p5, m.stats.Codes5xx))
 
+	displayRoutes := m.stats.Routes
+	if len(displayRoutes) > 10 {
+		displayRoutes = displayRoutes[:10]
+	}
+
 	sb.WriteString(" Active Routes:\n")
-	sb.WriteString(fmt.Sprintf("   %-10s %-13s %-24s %-9s %-8s %s\n", "PATH", "STRATEGY", "TARGET", "HEALTH", "REQ", "ERRS(5xx)"))
-	for _, route := range m.stats.Routes {
-		sb.WriteString(fmt.Sprintf("   %-10s %-13s %-24s [%-4s]   %-8d %d\n",
-			route.Path, route.Strategy, route.Target, route.Health, route.Reqs, route.Errors))
+	sb.WriteString(fmt.Sprintf("   %-12s %-13s %-24s %-9s %-8s %s\n", "PATH", "STRATEGY", "TARGET", "HEALTH", "REQ", "ERRS(5xx)"))
+	for _, route := range displayRoutes {
+		p := safeTruncate(route.Path, 12)
+		s := safeTruncate(route.Strategy, 13)
+		t := safeTruncate(route.Target, 24)
+
+		sb.WriteString(fmt.Sprintf("   %-12s %-13s %-24s [%-4s]   %-8d %d\n",
+			p, s, t, route.Health, route.Reqs, route.Errors))
+	}
+	if len(displayRoutes) == 0 {
+		sb.WriteString("   No active routes detected.\n")
 	}
 	sb.WriteString("\n")
 
-	sb.WriteString(" Recent Logs:\n")
-	for _, logEntry := range m.stats.RecentLogs {
-		sb.WriteString(fmt.Sprintf("   %s [%d] %s %s - %s - IP: %s\n",
-			logEntry.Timestamp, logEntry.Status, logEntry.Method, logEntry.Path, logEntry.Latency, logEntry.IP))
+	displayLogs := m.stats.RecentLogs
+	if len(displayLogs) > 5 {
+		displayLogs = displayLogs[:5]
 	}
-	if len(m.stats.RecentLogs) == 0 {
+
+	sb.WriteString(" Recent Logs:\n")
+	for _, logEntry := range displayLogs {
+		logPath := safeTruncate(logEntry.Path, 25)
+
+		sb.WriteString(fmt.Sprintf("   %s [%d] %s %s - %s - IP: %s\n",
+			logEntry.Timestamp, logEntry.Status, logEntry.Method, logPath, logEntry.Latency, logEntry.IP))
+	}
+	if len(displayLogs) == 0 {
 		sb.WriteString("   No requests recorded yet.\n")
 	}
 

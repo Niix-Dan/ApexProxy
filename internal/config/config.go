@@ -3,15 +3,15 @@ package config
 import (
 	"os"
 
+	"github.com/niix-dan/apexproxy/internal/metrics"
 	"gopkg.in/yaml.v3"
 )
 
 type Config struct {
-	Server        ServerConfig  `yaml:"server"`
-	Proxy         Middlewares   `yaml:"middlewares"`
-	Routing       []Route       `yaml:"routing"`
-	Logging       LoggingConfig `yaml:"logging"`
-	MetricsSecret string        `yaml:"MetricsSecret"`
+	Server  ServerConfig  `yaml:"server"`
+	Proxy   Middlewares   `yaml:"middlewares"`
+	Routing []Route       `yaml:"routing"`
+	Logging LoggingConfig `yaml:"logging"`
 }
 
 type LoggingConfig struct {
@@ -74,6 +74,8 @@ func Load(path string) (*Config, error) {
 	if err := decoder.Decode(&cfg); err != nil {
 		return nil, err
 	}
+
+	metrics.InitCSV(cfg.Logging.CSVEnabled, cfg.Logging.CSVPath, cfg.Logging.RedactHeaders)
 
 	return &cfg, nil
 }

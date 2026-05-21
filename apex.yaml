@@ -4,7 +4,6 @@ server:
   http_port: 80
   https_port: 443
   auto_tls: true
-  MetricsSecret: "apex-internal-metrics-v1"
   logging:
     csv_enabled: true
     csv_path: "/var/log/apex.csv"
