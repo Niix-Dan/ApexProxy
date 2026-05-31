@@ -19,18 +19,28 @@ import (
 	"golang.org/x/crypto/acme/autocert"
 )
 
+const maxSelfSignedCacheSize = 128
+
 type TLSManager struct {
 	globalCert      *tls.Certificate
 	routeCerts      map[string]*tls.Certificate
 	autoTLS         *autocert.Manager
 	selfSignedMu    sync.Mutex
 	selfSignedCache map[string]*tls.Certificate
+	knownHosts      map[string]struct{}
 }
 
 func NewTLSManager(cfg *config.Config) (*TLSManager, error) {
 	manager := &TLSManager{
 		routeCerts:      make(map[string]*tls.Certificate),
 		selfSignedCache: make(map[string]*tls.Certificate),
+		knownHosts:      make(map[string]struct{}),
+	}
+
+	for _, route := range cfg.Routing {
+		if route.Host != "" {
+			manager.knownHosts[route.Host] = struct{}{}
+		}
 	}
 
 	if cfg.Server.TLS.CertFile != "" && cfg.Server.TLS.KeyFile != "" {
@@ -77,12 +87,14 @@ func (m *TLSManager) HTTPHandler(fallback http.Handler) http.Handler {
 }
 
 func (m *TLSManager) getCertificate(hello *tls.ClientHelloInfo) (*tls.Certificate, error) {
-	if cert, ok := m.routeCerts[hello.ServerName]; ok {
+	name := hello.ServerName
+
+	if cert, ok := m.routeCerts[name]; ok {
 		return cert, nil
 	}
 
 	for host, cert := range m.routeCerts {
-		if strings.HasPrefix(host, "*.") && strings.HasSuffix(hello.ServerName, host[1:]) {
+		if strings.HasPrefix(host, "*.") && strings.HasSuffix(name, host[1:]) {
 			return cert, nil
 		}
 	}
@@ -97,7 +109,23 @@ func (m *TLSManager) getCertificate(hello *tls.ClientHelloInfo) (*tls.Certificat
 		return m.globalCert, nil
 	}
 
+	if !m.isKnownHost(name) {
+		return nil, fmt.Errorf("TLS: rejecting unknown server name %q", name)
+	}
+
 	return m.getOrCreateSelfSigned(hello.ServerName)
+}
+
+func (m *TLSManager) isKnownHost(name string) bool {
+	if _, ok := m.knownHosts[name]; ok {
+		return true
+	}
+	for h := range m.knownHosts {
+		if strings.HasPrefix(h, "*.") && strings.HasSuffix(name, h[1:]) {
+			return true
+		}
+	}
+	return false
 }
 
 func (m *TLSManager) getOrCreateSelfSigned(host string) (*tls.Certificate, error) {
@@ -106,6 +134,10 @@ func (m *TLSManager) getOrCreateSelfSigned(host string) (*tls.Certificate, error
 
 	if cert, ok := m.selfSignedCache[host]; ok {
 		return cert, nil
+	}
+
+	if len(m.selfSignedCache) >= maxSelfSignedCacheSize {
+		return nil, fmt.Errorf("TLS: self-signed cert cache full, refusing %q", host)
 	}
 
 	cert, err := generateSelfSigned(host)

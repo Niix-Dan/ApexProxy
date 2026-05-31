@@ -8,11 +8,13 @@ import (
 	"time"
 
 	"github.com/niix-dan/apexproxy/internal/config"
+	"github.com/niix-dan/apexproxy/internal/proxy/middlewares"
 )
 
 type Server struct {
-	cfg        *config.Config
-	router     *Router
+	cfg     *config.Config
+	handler http.Handler
+	//router     *Router
 	tlsManager *TLSManager
 }
 
@@ -21,9 +23,33 @@ func NewServer(cfg *config.Config) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	var handler http.Handler = NewRouter(cfg)
+
+	ipCfg := cfg.Proxy.IPFilter
+	if len(ipCfg.BlacklistCIDRs) > 0 || len(ipCfg.WhitelistCIDRs) > 0 {
+		ipf, err := middlewares.NewIPFilter(ipCfg.BlacklistCIDRs, ipCfg.WhitelistCIDRs)
+		if err != nil {
+			return nil, fmt.Errorf("ip filter: %w", err)
+		}
+		handler = ipf.Handler(handler)
+	}
+
+	if cfg.Proxy.RateLimit.Enabled && cfg.Proxy.RateLimit.RequestsPerMinute > 0 {
+		handler = middlewares.NewRateLimiter(cfg.Proxy.RateLimit.RequestsPerMinute).Handler(handler)
+	}
+
+	if cfg.Proxy.Compression.Enabled {
+		handler = middlewares.NewCompressor(&cfg.Proxy.Compression).Handler(handler)
+	}
+
+	if cfg.Proxy.Cache.Enabled {
+		handler = middlewares.NewResponseCache(cfg.Proxy.Cache).Handler(handler)
+	}
+
 	return &Server{
 		cfg:        cfg,
-		router:     NewRouter(cfg),
+		handler:    handler,
 		tlsManager: tlsManager,
 	}, nil
 }
@@ -67,7 +93,7 @@ func (s *Server) Start() error {
 			addr := fmt.Sprintf(":%d", httpsPort)
 			srv := &http.Server{
 				Addr:         addr,
-				Handler:      s.router,
+				Handler:      s.handler,
 				TLSConfig:    s.tlsManager.GetTLSConfig(),
 				ReadTimeout:  10 * time.Second,
 				WriteTimeout: 10 * time.Second,
@@ -78,7 +104,7 @@ func (s *Server) Start() error {
 	}
 
 	if started == 0 {
-		return fmt.Errorf("no ports configured")
+		return fmt.Errorf("no ports configured to listen on")
 	}
 
 	firstErr := <-errChan

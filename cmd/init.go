@@ -17,17 +17,27 @@ server:
   auto_tls: true
 
 logging:
-    csv_enabled: true
-    csv_path: "/var/log/apex.csv"
-    redact_headers: ["Authorization", "Cookie"]
+  csv_enabled: true
+  csv_path: "/var/log/apex.csv"
+  redact_headers: ["Authorization", "Cookie"]
 
 middlewares:
+  ip_filter:
+    blacklist_cidrs:
+      - "10.0.0.0/8"
+    whitelist_cidrs: []
   rate_limit:
     enabled: true
-    requests_per_minute: 1000
+    requests_per_minute: 300
   compression:
     enabled: true
+    level: 5 # Compression level (1-9)
     types: ["text/html", "application/json"]
+  cache:
+    enabled: true
+    max_entries: 2000
+    ttl_seconds: 60
+    max_body_bytes: 524288 # 512 KB
 
 routing:
   - host: api.example.com

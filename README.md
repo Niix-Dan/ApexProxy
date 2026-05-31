@@ -51,26 +51,36 @@ apex status
 The configuration is managed via `/etc/apex/apex.yaml`:
 
 ```yaml
+# Apex Proxy Configuration
+# High-performance reverse proxy configuration file
+
 server:
   http_port: 80
   https_port: 443
   auto_tls: true
-  tls:
-    cert_file: "/etc/ssl/certs/server.crt"
-    key_file: "/etc/ssl/certs/server.key"
 
 logging:
-    csv_enabled: true
-    csv_path: "/var/log/apex.csv"
-    redact_headers: ["Authorization", "Cookie"]
+  csv_enabled: true
+  csv_path: "/var/log/apex.csv"
+  redact_headers: ["Authorization", "Cookie"]
 
 middlewares:
+  ip_filter:
+    blacklist_cidrs:
+      - "10.0.0.0/8"
+    whitelist_cidrs: []
   rate_limit:
     enabled: true
-    requests_per_minute: 1000
+    requests_per_minute: 300
   compression:
     enabled: true
+    level: 5 # Compression level (1-9)
     types: ["text/html", "application/json"]
+  cache:
+    enabled: true
+    max_entries: 2000
+    ttl_seconds: 60
+    max_body_bytes: 524288 # 512 KB
 
 routing:
   - host: api.example.com
@@ -84,22 +94,11 @@ routing:
         weight: 1
 
   - host: example.com
-    path: /auth
-    strategy: ip-hash
-    priority: 90
-    targets:
-      - url: "http://10.0.0.5:8080"
-
-  - host: "*.saas-app.com"
-    strategy: dynamic-lookup
-    priority: 50
-    resolver: "redis://localhost:6379"
-
-  - path: /
+    path: /
     strategy: single
-    priority: 1
+    priority: 10
     targets:
-      - url: "http://127.0.0.1:3000"
+      - url: "http://127.0.0.1:5173"
 ```
 
 ## Roadmap
@@ -112,9 +111,11 @@ routing:
 - [x] TUI dashboard
 - [x] `apex init` command
 - [x] Automatic TLS via Let's Encrypt
+- [x] Response compression middleware
+- [x] IpFilter middleware (Whitelist & Blacklist)
+- [x] RateLimit middleware
+- [x] Cache middleware
 - [ ] Hot-reload via `fsnotify` (no dropped connections)
-- [ ] Rate limiting (token bucket)
-- [ ] Response compression middleware
 - [ ] `dynamic-lookup` strategy (Redis)
 - [ ] Unit tests
 

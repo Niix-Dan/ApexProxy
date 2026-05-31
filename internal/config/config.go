@@ -34,6 +34,8 @@ type TLSConfig struct {
 
 type Middlewares struct {
 	RateLimit   RateLimitConfig   `yaml:"rate_limit"`
+	IPFilter    IPFilterConfig    `yaml:"ip_filter"`
+	Cache       CacheConfig       `yaml:"cache"`
 	Compression CompressionConfig `yaml:"compression"`
 }
 
@@ -42,8 +44,21 @@ type RateLimitConfig struct {
 	RequestsPerMinute int  `yaml:"requests_per_minute"`
 }
 
+type IPFilterConfig struct {
+	BlacklistCIDRs []string `yaml:"blacklist_cidrs"`
+	WhitelistCIDRs []string `yaml:"whitelist_cidrs"`
+}
+
+type CacheConfig struct {
+	Enabled      bool  `yaml:"enabled"`
+	MaxEntries   int   `yaml:"max_entries"`
+	TTLSeconds   int   `yaml:"ttl_seconds"`
+	MaxBodyBytes int64 `yaml:"max_body_bytes"`
+}
+
 type CompressionConfig struct {
 	Enabled bool     `yaml:"enabled"`
+	Level   int      `yaml:"level"`
 	Types   []string `yaml:"types"`
 }
 
