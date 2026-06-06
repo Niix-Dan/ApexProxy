@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"io"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -80,6 +81,11 @@ func NewRouter(cfg *config.Config) *Router {
 }
 
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	if isWebSocketRequest(req) {
+		r.handleWebSocket(w, req)
+		return
+	}
+
 	metrics.Instance.ConnOpen()
 	defer metrics.Instance.ConnClose()
 
@@ -126,6 +132,48 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	target.Proxy.ServeHTTP(interceptor, req)
 
 	r.recordMetrics(interceptor, req, reqBodyCounter, startTime, target.URL, matched.Config.Strategy)
+}
+
+func isWebSocketRequest(req *http.Request) bool {
+	return strings.EqualFold(req.Header.Get("Upgrade"), "websocket")
+}
+
+func (r *Router) handleWebSocket(w http.ResponseWriter, req *http.Request) {
+	matched := r.matchRoute(req)
+	if matched == nil {
+		http.Error(w, "Bad Gateway", http.StatusBadGateway)
+		return
+	}
+	target := matched.chooseTarget(req.RemoteAddr)
+
+	targetURL, _ := url.Parse(target.URL)
+	if targetURL.Scheme == "https" {
+		targetURL.Scheme = "wss"
+	} else {
+		targetURL.Scheme = "ws"
+	}
+
+	hijacker, ok := w.(http.Hijacker)
+	if !ok {
+		http.Error(w, "WebSocket not supported", http.StatusInternalServerError)
+		return
+	}
+	clientConn, _, err := hijacker.Hijack()
+	if err != nil {
+		return
+	}
+	defer clientConn.Close()
+
+	backendConn, err := net.Dial("tcp", targetURL.Host)
+	if err != nil {
+		return
+	}
+	defer backendConn.Close()
+
+	req.Write(backendConn)
+
+	go io.Copy(backendConn, clientConn)
+	io.Copy(clientConn, backendConn)
 }
 
 func (r *Router) matchRoute(req *http.Request) *RuntimeRoute {
