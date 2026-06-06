@@ -101,6 +101,12 @@ func (gw *gzipWriter) decide() {
 	gw.decided = true
 	h := gw.ResponseWriter.Header()
 
+	if strings.Contains(strings.ToLower(h.Get("Content-Type")), "text/event-stream") {
+		gw.skip = true
+		gw.ResponseWriter.WriteHeader(gw.statusCode)
+		return
+	}
+
 	eligible := gw.statusHasBody() &&
 		h.Get("Content-Encoding") == "" &&
 		gw.c.shouldCompress(h.Get("Content-Type"))

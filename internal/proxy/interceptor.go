@@ -32,3 +32,9 @@ func (w *responseWriterInterceptor) Write(b []byte) (int, error) {
 	w.bytesWritten += int64(n)
 	return n, err
 }
+
+func (w *responseWriterInterceptor) Flush() {
+	if f, ok := w.ResponseWriter.(http.Flusher); ok {
+		f.Flush()
+	}
+}

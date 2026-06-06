@@ -77,11 +77,11 @@ func (s *Server) Start() error {
 				http.Redirect(w, r, target, http.StatusMovedPermanently)
 			})
 			srv := &http.Server{
-				Addr:         addr,
-				Handler:      s.tlsManager.HTTPHandler(redirectHandler),
-				ReadTimeout:  10 * time.Second,
-				WriteTimeout: 10 * time.Second,
-				IdleTimeout:  120 * time.Second,
+				Addr:              addr,
+				Handler:           s.tlsManager.HTTPHandler(redirectHandler),
+				ReadTimeout:       10 * time.Second,
+				ReadHeaderTimeout: 10 * time.Second,
+				IdleTimeout:       120 * time.Second,
 			}
 			errChan <- srv.ListenAndServe()
 		}()
@@ -92,12 +92,12 @@ func (s *Server) Start() error {
 		go func() {
 			addr := fmt.Sprintf(":%d", httpsPort)
 			srv := &http.Server{
-				Addr:         addr,
-				Handler:      s.handler,
-				TLSConfig:    s.tlsManager.GetTLSConfig(),
-				ReadTimeout:  10 * time.Second,
-				WriteTimeout: 10 * time.Second,
-				IdleTimeout:  120 * time.Second,
+				Addr:              addr,
+				Handler:           s.handler,
+				TLSConfig:         s.tlsManager.GetTLSConfig(),
+				ReadTimeout:       10 * time.Second,
+				ReadHeaderTimeout: 10 * time.Second,
+				IdleTimeout:       120 * time.Second,
 			}
 			errChan <- srv.ListenAndServeTLS("", "")
 		}()

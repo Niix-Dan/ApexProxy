@@ -12,6 +12,13 @@ type Config struct {
 	Proxy   Middlewares   `yaml:"middlewares"`
 	Routing []Route       `yaml:"routing"`
 	Logging LoggingConfig `yaml:"logging"`
+	MQTT    MQTTConfig    `yaml:"mqtt"`
+}
+
+type MQTTConfig struct {
+	Enabled bool     `yaml:"enabled"`
+	Port    int      `yaml:"port"`
+	Targets []string `yaml:"targets"`
 }
 
 type LoggingConfig struct {
