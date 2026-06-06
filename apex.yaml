@@ -47,8 +47,8 @@ routing:
     targets:
       - url: "http://127.0.0.1:5173"
 
-#mqtt:
-#  enabled: true
-#  port: 1883
-#  targets:
-#    - "tcp://broker1:1883"
+mqtt:
+  enabled: true
+  port: 1883
+  targets:
+    - "tcp://broker1:1883"

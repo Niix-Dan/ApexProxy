@@ -5,8 +5,9 @@ import (
 	"net/http"
 
 	"github.com/niix-dan/apexproxy/internal/config"
+	"github.com/niix-dan/apexproxy/internal/httpproxy"
 	"github.com/niix-dan/apexproxy/internal/metrics"
-	"github.com/niix-dan/apexproxy/internal/proxy"
+	"github.com/niix-dan/apexproxy/internal/tcpproxy"
 
 	"github.com/spf13/cobra"
 )
@@ -31,7 +32,17 @@ var startCmd = &cobra.Command{
 			}
 		}()
 
-		server, err := proxy.NewServer(cfg)
+		if cfg.MQTT.Enabled {
+			mqttProxy := tcpproxy.NewMQTTProxy(cfg.MQTT.Port, cfg.MQTT.Targets)
+
+			go func() {
+				if err := mqttProxy.Listen(); err != nil {
+					log.Fatalf("fatal error in MQTT proxy: %v", err)
+				}
+			}()
+		}
+
+		server, err := httpproxy.NewServer(cfg)
 		if err != nil {
 			log.Fatalf("Failed to create server: %v", err)
 		}

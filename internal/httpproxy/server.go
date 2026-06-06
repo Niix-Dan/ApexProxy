@@ -1,4 +1,4 @@
-package proxy
+package httpproxy
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/niix-dan/apexproxy/internal/config"
-	"github.com/niix-dan/apexproxy/internal/proxy/middlewares"
+	"github.com/niix-dan/apexproxy/internal/httpproxy/middlewares"
 )
 
 type Server struct {
